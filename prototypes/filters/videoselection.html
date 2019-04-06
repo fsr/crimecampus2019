@@ -1,0 +1,41 @@
+<html>
+
+<head>
+    <title>Video Auswahl</title>
+</head>
+
+<body>
+    <table>
+        <table border="20" id="table">
+            <tr>
+                <th>Videoname</th>
+            </tr>
+            <tr>
+                <td><a href="index.html?value=https://www.youtube.com/watch?v=wZZ7oFKsKzY">video 1</a></td>
+            </tr>
+            <tr>
+                <td><a href="index.html?value=https://www.youtube.com/watch?v=yJ5YHdt2GIM">video 2</a></td>
+            </tr>
+            <tr>
+                <td><a href="index.html?value=richtigesVideo">video 3</a></td>
+            </tr>
+        </table>
+    </table>
+    <script>
+        var table = document.getElementById("table");
+        for (var i = 0; i < 100; i++) {
+            var newrow = document.createElement("tr");
+            var newtd = document.createElement("td");
+            var newelement = document.createElement("a");
+            var number = i + 3;
+            newelement.setAttribute("href", "./videoselection.html");
+            newelement.innerHTML = "video " + number;
+            newtd.appendChild(newelement);
+            newrow.appendChild(newtd);
+            table.appendChild(newrow);
+        }
+
+    </script>
+</body>
+
+</html>
