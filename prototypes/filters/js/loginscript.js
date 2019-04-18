@@ -4,7 +4,7 @@ const table = document.getElementById('table');
 btnsend.addEventListener('click', function () {
     let pw = password.value;
     if (pw == "geheim") {
-        window.location.replace("/prototypes/filters/moorhuhn.html");
+        window.location.replace("./moorhuhn.html");
     }
     else {
         let color1 = Math.floor((Math.random() * 10));

@@ -1,6 +1,17 @@
 jQuery(function () {
 
+	//Game settings
+	const TARGET_FPS = 30
+	const BIRD_IMAGE_UPDATES_PER_SECOND = 5
+	const GAME_DURATION_IN_SECONDS = 30
+	const NUM_BIRD_SPAWNS_PER_SECOND = 1
+	const MIN_SCORE_TO_WIN = 300
+	const SPEED_DEAD_BIRD_PIX_PER_SEC = 150
+	const SPEED_LIVING_BIRD_PIX_PER_SEC = 48
+
+
 	function Feld() {
+
 		this.vogel1 = new Image();
 		this.vogel2 = new Image();
 		this.vogel3 = new Image();
@@ -14,9 +25,10 @@ jQuery(function () {
 		this.vogel5.src = "./assets/Vogel5.png";
 		this.vogel6.src = "./assets/Vogel6.png";
 		this.punkte = 0;
-		this.zeit = 300;
+		this.zeit = Math.round(GAME_DURATION_IN_SECONDS * 1000 / TARGET_FPS);
 	}
-
+	
+ 	const SPEED_ALIVE = Math.round(SPEED_LIVING_BIRD_PIX_PER_SEC * TARGET_FPS / 1000) +1
 	function Vogel(posY, dir, size) {
 		if (parseInt(Math.random() * 100) > 50)
 			this.direction = 1;
@@ -26,7 +38,7 @@ jQuery(function () {
 		this.x = (this.direction == 1) ? -70 : 480;
 		this.y = parseInt(Math.random() * 270);
 		this.bird = 1;
-		this.speed = 4 + parseInt(Math.random() * 3);
+		this.speed = SPEED_ALIVE + parseInt(Math.random() * 3);
 		this.img = (this.direction == 1) ? feld.vogel1 : feld.vogel4;
 		this.scale = 0.5 + (Math.random() * 0.5);
 		this.isalive = true;
@@ -36,9 +48,10 @@ jQuery(function () {
 	 */
 	// CanvasInit
 	var canvas = document.getElementById('feld');
+
 	if (canvas.getContext) {
 		ctx = canvas.getContext('2d');
-		setInterval(game_loop, 100);
+		setInterval(game_loop, 1000 / TARGET_FPS);
 		setInterval(add_bird, 1000);
 		ctx.globalCompositeOperation = 'destination-over';
 	}
@@ -47,13 +60,20 @@ jQuery(function () {
 	vogel = new Array();
 	vogel.push(new Vogel());
 
+	var loopCount = 0
+	const FRAMES_UNTIL_BIRD_IMAGE_UPDATE =
+	 								Math.round(1000 / BIRD_IMAGE_UPDATES_PER_SECOND / TARGET_FPS)
+
 	function game_loop() {
 		if (feld.zeit > 0) {
 			ctx.clearRect(0, 0, 480, 320); // CLS
 			draw_birds(); // zeichne Voegel
-			change_bird(); // wechsel image & pos
-			$("#zeit").val(parseInt(feld.zeit / 10));
+			if(loopCount % FRAMES_UNTIL_BIRD_IMAGE_UPDATE == 0)
+				change_bird(); // wechsel image & pos
+			moveBirds();
+			$("#zeit").val(parseInt(feld.zeit * TARGET_FPS / 1000));
 			feld.zeit--;
+			++loopCount;
 		} else {
 			ctx.clearRect(0, 0, 480, 320); // CLS
 			for (var i = 0; i < vogel.length; i++) {
@@ -61,17 +81,31 @@ jQuery(function () {
 			}
 			//document.refresh();
 			$("#zeit").val("Ende");
-			if ($('#punkte').val() > 200) {
-				console.log(".");
+			if ($('#punkte').val() > MIN_SCORE_TO_WIN) {
 				document.getElementById('weiter').style.visibility = "visible";
 			}
 		}
-
 	}
 
+	const DEAD_SPEED = Math.round(SPEED_DEAD_BIRD_PIX_PER_SEC * TARGET_FPS / 1000) + 1
+	function moveBirds() {
+		for (var i = 0; i < vogel.length; i++) {
+			if (vogel[i].isalive == true) {
+				if (vogel[i].direction >= 1) {
+					vogel[i].x += vogel[i].speed;
+				}else{
+					vogel[i].x -= vogel[i].speed;
+				}
+			}
+			else if (vogel[i].y <= 320) {
+				vogel[i].y += DEAD_SPEED;
+			}
+		}
+	}
 	/*
 	 * Wechselt Bilder und Position
 	 */
+
 	function change_bird() {
 		for (var i = 0; i < vogel.length; i++) {
 			if (vogel[i].isalive == true) {
@@ -95,14 +129,6 @@ jQuery(function () {
 						vogel[i].img = feld.vogel5;
 						break;
 				}
-				if (vogel[i].direction >= 1) {
-					vogel[i].x += vogel[i].speed;
-				} else {
-					vogel[i].x -= vogel[i].speed;
-				}
-			} else if (vogel[i].y <= 320) {
-
-				vogel[i].y += 15;
 			}
 		}
 	}
@@ -110,13 +136,12 @@ jQuery(function () {
 	 * Alle 3 Sekunden respawn
 	 */
 	function add_bird() {
-		vogel.push(new Vogel());
+		for(i = 0; i < NUM_BIRD_SPAWNS_PER_SECOND; ++i)
+			vogel.push(new Vogel());
 	}
-	/*
-	 * zeichnet alle Voegel
-	 */
+
 	function draw_birds() {
-		for (var i = 0; i < vogel.length; i++) {
+		for (var i = 0; i < vogel.length; ++i) {
 			if (vogel[i].isalive == true || vogel[i].x > -70 || vogel[i].x <= 480) {
 				if (vogel[i].direction == 1)
 					ctx.drawImage(vogel[i].img, vogel[i].x, vogel[i].y,
@@ -134,13 +159,13 @@ jQuery(function () {
 	/*
 	 * Schießen (iPhone durch tab ersetzen)
 	 */
+
 	$("#feld").click(
 		function (e) {
 			// alert(e.pageX+" - "+e.pageY);
 			for (var i = 0; i < vogel.length; i++) {
 				if (e.pageX > vogel[i].x && e.pageX < (vogel[i].x + (70 * vogel[i].scale)) && e.pageY > vogel[i].y && e.pageY < (vogel[i].y + (50 * vogel[i].scale))) {
 					vogel[i].isalive = false;
-					console.log(vogel[i].scale);
 					feld.punkte += parseInt(20 * (1 / vogel[i].scale));
 					$("#punkte").val(feld.punkte);
 				}
@@ -153,5 +178,5 @@ function neustart() {
 }
 
 function weiter() {
-	window.location.replace("/prototypes/filters/index.html");
+	window.location.replace("./videoselection.html");
 }
